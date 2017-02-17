@@ -83,6 +83,28 @@ var core	=	{
 				//
 			}
 		}
+	},
+	
+	routing	:	{
+		runOnAll	:	function(req,res,next){
+			var ip					= "http://devbox.net.local:8021";//+cfg.app_port;//	Forced to this during testing -- req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+			var servers			=	app.get("SERVERS");
+			var senderId		=	req.params.senderId;
+			var sharedKey	=	req.params.sharedKey;
+			
+			if (!senderId || !sharedKey){
+				console.log("Invalid Request");
+				res.send("Invalid Request");
+				return;
+			};
+
+			if (app.get("CLUSTER_SHARED_KEY") != sharedKey || servers.indexOf(ip) <= -1){
+				console.log("Validation failed");
+				res.send("Validation failed");
+				return;
+			}
+			next();
+		}
 	}
 }
 module.exports.core		=	core;

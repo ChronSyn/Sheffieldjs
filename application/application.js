@@ -76,16 +76,30 @@ function setupServers(cb ){
 			// Set server shared key
 			app.set("CLUSTER_SHARED_KEY", shrKey);
 			console.log("Shared key set to: " + shrKey);
-			
-			for (var i = 0; i<adv_cfg.app.servers.length; i++){
-				var tServ	=	adv_cfg.app.servers[i];
-				request(tServ+"/system/core/id/get/"+SrvId+"/"+shrKey, function(err, resp, body){
+
+			// Advertise to each server in cluster
+			adv_cfg.app.servers.forEach(function(val,index){
+				var tServ	=	val;
+				var ReqOpts	=	{
+					url			:	tServ+"/system/core/id/get/",
+					headers	:	{
+						"senderId"		:	SrvId,
+						"sharedKey"	:	shrKey
+					}
+				};
+				
+				request(ReqOpts, function(err, resp, remShrKey){
+					//console.log(remShrKey);
+					//console.log("Request result from " + tServ + " : " + remShrKey);
 					SERVER_OBJ[tServ]	=	{
-						"ID"			:	body,
+						"ID"									:	remShrKey,
+						"ActiveConnections"		:	0,
 					};
-					console.log("Request result from " + tServ + " : " + body);
 				});
-			};
+			});
+
+			app.set("ACTIVE_CONNECTIONS", 0);
+			app.set("SERVER_OBJ", SERVER_OBJ)
 			return cb(SERVER_OBJ);
 		});
 		
@@ -93,7 +107,7 @@ function setupServers(cb ){
 };
 
 setupServers(function(data){
-	console.log(data);
+	//console.log(data);
 });
 
 app.set("SERVERS", adv_cfg.app.servers);//SERVER_OBJ);
